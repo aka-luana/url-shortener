@@ -34,6 +34,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "url-shortener v1"));
 }
 
 app.UseHttpsRedirection();
@@ -93,6 +94,8 @@ app.MapGet("/{code}", async (
 
     return Results.Redirect(shortUrl.LongUrl, permanent: true);
 })
-.WithName("ResolveUrl");
+.WithName("ResolveUrl")
+.Produces(StatusCodes.Status301MovedPermanently)
+.Produces(StatusCodes.Status404NotFound);
 
 app.Run();
