@@ -21,7 +21,10 @@ export default $config({
 
     const service = new sst.aws.Service("Api", {
       cluster,
-      architecture: "arm64",
+      // Diagnóstico: temporariamente em x86_64 (era arm64) para isolar se a
+      // falha de TLS com o MongoDB Atlas ("tlsv1 alert internal error") é
+      // específica do runtime .NET em ARM64/Graviton. Reverter depois do teste.
+      architecture: "x86_64",
       cpu: "0.25 vCPU",
       memory: "1 GB",
       capacity: "spot",
