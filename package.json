@@ -1,0 +1,14 @@
+{
+  "name": "url-shortener-infra",
+  "private": true,
+  "scripts": {
+    "deploy": "sst deploy",
+    "remove": "sst remove"
+  },
+  "dependencies": {
+    "sst": "^3"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

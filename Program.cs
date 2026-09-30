@@ -28,6 +28,7 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
 builder.Services.AddSingleton<IIdGenerator, RedisIdGenerator>();
 builder.Services.AddSingleton<IShortCodeCodec, HashidsShortCodeCodec>();
 builder.Services.AddSingleton<IUrlRepository, MongoUrlRepository>();
+builder.Services.AddHostedService<RedisCounterSeeder>();
 
 var app = builder.Build();
 
@@ -35,9 +36,8 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "url-shortener v1"));
+    app.UseHttpsRedirection();
 }
-
-app.UseHttpsRedirection();
 
 app.MapPost("/shorten", async (
     ShortenRequest request,
