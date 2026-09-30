@@ -6,3 +6,7 @@ obj/
 node_modules/
 *.user
 .vs/
+
+
+# sst
+.sst
