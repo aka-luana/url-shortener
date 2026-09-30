@@ -1,4 +1,3 @@
-using System.Security.Authentication;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using StackExchange.Redis;
@@ -21,19 +20,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
     ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis")!));
 
 builder.Services.AddSingleton<IMongoClient>(_ =>
-{
-    // Diagnóstico: forçando TLS 1.2 para isolar se a falha de handshake
-    // ("tlsv1 alert internal error") vem da negociação em TLS 1.3 no
-    // container Linux ARM64. Se resolver, o driver confirma a hipótese;
-    // caso contrário, reverter (remover o SslSettings) no próximo passo.
-    var settings = MongoClientSettings.FromConnectionString(
-        builder.Configuration.GetConnectionString("Mongo"));
-    settings.SslSettings = new SslSettings
-    {
-        EnabledSslProtocols = SslProtocols.Tls12
-    };
-    return new MongoClient(settings);
-});
+    new MongoClient(builder.Configuration.GetConnectionString("Mongo")));
 
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
     sp.GetRequiredService<IMongoClient>().GetDatabase("url_shortener"));
