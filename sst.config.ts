@@ -21,14 +21,30 @@ export default $config({
 
     const service = new sst.aws.Service("Api", {
       cluster,
-      // Diagnóstico: temporariamente em x86_64 (era arm64) para isolar se a
-      // falha de TLS com o MongoDB Atlas ("tlsv1 alert internal error") é
-      // específica do runtime .NET em ARM64/Graviton. Reverter depois do teste.
-      architecture: "x86_64",
+      architecture: "arm64",
       cpu: "0.25 vCPU",
       memory: "1 GB",
       capacity: "spot",
       serviceRegistry: { port: 8080 },
+      // Diagnóstico: habilita o ECS Exec para abrirmos um shell dentro do
+      // container rodando na AWS e investigar ao vivo a falha de TLS com o
+      // Atlas (testar MTU, rodar openssl s_client, etc). Remover depois.
+      permissions: [
+        {
+          actions: [
+            "ssmmessages:CreateControlChannel",
+            "ssmmessages:CreateDataChannel",
+            "ssmmessages:OpenControlChannel",
+            "ssmmessages:OpenDataChannel",
+          ],
+          resources: ["*"],
+        },
+      ],
+      transform: {
+        service: {
+          enableExecuteCommand: true,
+        },
+      },
       containers: [
         {
           name: "app",
