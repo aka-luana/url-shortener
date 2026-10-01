@@ -22,28 +22,39 @@ public class RedisCounterSeeder(
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var highestId = await database.GetCollection<ShortUrl>("urls")
-            .Find(FilterDefinition<ShortUrl>.Empty)
-            .SortByDescending(x => x.Id)
-            .Limit(1)
-            .Project(x => x.Id)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        var counterKey = new RedisKey(options.Value.RedisCounterKey);
-
-        for (var attempt = 1; ; attempt++)
+        // Diagnóstico: evita que uma falha aqui derrube o processo inteiro
+        // (o host chama StartAsync dos HostedServices com abortOnFirstException),
+        // só pra manter o container vivo tempo suficiente para o ECS Exec
+        // conseguir registrar o canal do SSM. Reverter depois do diagnóstico.
+        try
         {
-            try
+            var highestId = await database.GetCollection<ShortUrl>("urls")
+                .Find(FilterDefinition<ShortUrl>.Empty)
+                .SortByDescending(x => x.Id)
+                .Limit(1)
+                .Project(x => x.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            var counterKey = new RedisKey(options.Value.RedisCounterKey);
+
+            for (var attempt = 1; ; attempt++)
             {
-                var result = await redis.GetDatabase()
-                    .ScriptEvaluateAsync(RaiseCounterScript, [counterKey], [highestId]);
-                logger.LogInformation("Redis counter is at {Counter} (highest stored id: {HighestId})", result, highestId);
-                return;
+                try
+                {
+                    var result = await redis.GetDatabase()
+                        .ScriptEvaluateAsync(RaiseCounterScript, [counterKey], [highestId]);
+                    logger.LogInformation("Redis counter is at {Counter} (highest stored id: {HighestId})", result, highestId);
+                    return;
+                }
+                catch (RedisException) when (attempt < 10)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+                }
             }
-            catch (RedisException) when (attempt < 10)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
-            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "RedisCounterSeeder falhou, mas o processo vai continuar de pé (modo diagnóstico)");
         }
     }
 
