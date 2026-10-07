@@ -35,6 +35,9 @@ if (app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.MapPost("/shorten", async (
     ShortenRequest request,
     IIdGenerator idGenerator,
