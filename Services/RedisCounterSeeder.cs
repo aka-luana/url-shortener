@@ -1,14 +1,14 @@
+using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.Model;
 using Microsoft.Extensions.Options;
-using MongoDB.Driver;
 using StackExchange.Redis;
-using url_shortener.Models;
 using url_shortener.Options;
 
 namespace url_shortener.Services;
 
 public class RedisCounterSeeder(
     IConnectionMultiplexer redis,
-    IMongoDatabase database,
+    IAmazonDynamoDB dynamoDb,
     IOptions<UrlShortenerOptions> options,
     ILogger<RedisCounterSeeder> logger) : IHostedService
 {
@@ -22,40 +22,41 @@ public class RedisCounterSeeder(
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        // Diagnóstico: evita que uma falha aqui derrube o processo inteiro
-        // (o host chama StartAsync dos HostedServices com abortOnFirstException),
-        // só pra manter o container vivo tempo suficiente para o ECS Exec
-        // conseguir registrar o canal do SSM. Reverter depois do diagnóstico.
-        try
+        var highestId = await GetHighestStoredIdAsync(cancellationToken);
+        var counterKey = new RedisKey(options.Value.RedisCounterKey);
+
+        for (var attempt = 1; ; attempt++)
         {
-            var highestId = await database.GetCollection<ShortUrl>("urls")
-                .Find(FilterDefinition<ShortUrl>.Empty)
-                .SortByDescending(x => x.Id)
-                .Limit(1)
-                .Project(x => x.Id)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            var counterKey = new RedisKey(options.Value.RedisCounterKey);
-
-            for (var attempt = 1; ; attempt++)
+            try
             {
-                try
-                {
-                    var result = await redis.GetDatabase()
-                        .ScriptEvaluateAsync(RaiseCounterScript, [counterKey], [highestId]);
-                    logger.LogInformation("Redis counter is at {Counter} (highest stored id: {HighestId})", result, highestId);
-                    return;
-                }
-                catch (RedisException) when (attempt < 10)
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
-                }
+                var result = await redis.GetDatabase()
+                    .ScriptEvaluateAsync(RaiseCounterScript, [counterKey], [highestId]);
+                logger.LogInformation("Redis counter is at {Counter} (highest stored id: {HighestId})", result, highestId);
+                return;
+            }
+            catch (RedisException) when (attempt < 10)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
             }
         }
-        catch (Exception ex)
+    }
+
+    private async Task<long> GetHighestStoredIdAsync(CancellationToken cancellationToken)
+    {
+        var response = await dynamoDb.QueryAsync(new QueryRequest
         {
-            logger.LogWarning(ex, "RedisCounterSeeder falhou, mas o processo vai continuar de pé (modo diagnóstico)");
-        }
+            TableName = options.Value.DynamoTableName,
+            IndexName = "HighestIdIndex",
+            KeyConditionExpression = "Shard = :shard",
+            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+            {
+                [":shard"] = new() { S = "all" },
+            },
+            ScanIndexForward = false,
+            Limit = 1,
+        }, cancellationToken);
+
+        return response.Items.Count == 0 ? 0 : long.Parse(response.Items[0]["Id"].N);
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

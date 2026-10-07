@@ -9,4 +9,5 @@ public class UrlShortenerOptions
     public int MinCodeLength { get; init; } = 5;
     public int MaxCodeLength { get; init; } = 7;
     public required string RedisCounterKey { get; init; }
+    public required string DynamoTableName { get; init; }
 }

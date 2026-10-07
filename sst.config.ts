@@ -11,13 +11,29 @@ export default $config({
     };
   },
   async run() {
-    const mongoUrl = new sst.Secret("MongoUrl");
     const hashidsSalt = new sst.Secret("HashidsSalt");
 
     const vpc = new sst.aws.Vpc("Vpc");
     const cluster = new sst.aws.Cluster("Cluster", { vpc });
 
     const api = new sst.aws.ApiGatewayV2("Gateway", { vpc });
+
+    // Substitui o MongoDB Atlas: o proxy multi-tenant do nível grátis (M0)
+    // rejeita o handshake TLS de clientes OpenSSL (bug confirmado do lado da
+    // Atlas, não do nosso código). DynamoDB é nativo da AWS, sem esse salto
+    // de rede entre provedores, e o free tier é permanente.
+    const table = new sst.aws.Dynamo("Urls", {
+      fields: {
+        Id: "number",
+        Shard: "string",
+      },
+      primaryIndex: { hashKey: "Id" },
+      globalIndexes: {
+        // Usado só pelo RedisCounterSeeder, para achar o maior Id gravado
+        // depois que o Redis perde o contador (restart/spot interrompido).
+        HighestIdIndex: { hashKey: "Shard", rangeKey: "Id" },
+      },
+    });
 
     const service = new sst.aws.Service("Api", {
       cluster,
@@ -26,9 +42,8 @@ export default $config({
       memory: "1 GB",
       capacity: "spot",
       serviceRegistry: { port: 8080 },
-      // Diagnóstico: habilita o ECS Exec para abrirmos um shell dentro do
-      // container rodando na AWS e investigar ao vivo a falha de TLS com o
-      // Atlas (testar MTU, rodar openssl s_client, etc). Remover depois.
+      // ECS Exec: deixado habilitado (sem custo relevante) por ter sido útil
+      // na depuração do bug do Atlas; pode ser removido se não for mais usado.
       permissions: [
         {
           actions: [
@@ -38,6 +53,10 @@ export default $config({
             "ssmmessages:OpenDataChannel",
           ],
           resources: ["*"],
+        },
+        {
+          actions: ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:Query"],
+          resources: [table.arn, $interpolate`${table.arn}/index/*`],
         },
       ],
       transform: {
@@ -50,10 +69,10 @@ export default $config({
           name: "app",
           image: { context: ".", dockerfile: "Dockerfile" },
           environment: {
-            ConnectionStrings__Mongo: mongoUrl.value,
             ConnectionStrings__Redis: "localhost:6379,abortConnect=false",
             UrlShortener__HashidsSalt: hashidsSalt.value,
             UrlShortener__BaseUrl: $interpolate`${api.url}`,
+            UrlShortener__DynamoTableName: table.name,
           },
         },
         {

@@ -1,5 +1,5 @@
+using Amazon.DynamoDBv2;
 using Microsoft.Extensions.Options;
-using MongoDB.Driver;
 using StackExchange.Redis;
 using url_shortener.Contracts;
 using url_shortener.Models;
@@ -19,15 +19,11 @@ builder.Services
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
     ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis")!));
 
-builder.Services.AddSingleton<IMongoClient>(_ =>
-    new MongoClient(builder.Configuration.GetConnectionString("Mongo")));
-
-builder.Services.AddSingleton<IMongoDatabase>(sp =>
-    sp.GetRequiredService<IMongoClient>().GetDatabase("url_shortener"));
+builder.Services.AddSingleton<IAmazonDynamoDB>(_ => new AmazonDynamoDBClient());
 
 builder.Services.AddSingleton<IIdGenerator, RedisIdGenerator>();
 builder.Services.AddSingleton<IShortCodeCodec, HashidsShortCodeCodec>();
-builder.Services.AddSingleton<IUrlRepository, MongoUrlRepository>();
+builder.Services.AddSingleton<IUrlRepository, DynamoUrlRepository>();
 builder.Services.AddHostedService<RedisCounterSeeder>();
 
 var app = builder.Build();
