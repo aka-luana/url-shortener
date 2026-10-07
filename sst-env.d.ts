@@ -18,9 +18,9 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
-    "MongoUrl": {
-      "type": "sst.sst.Secret"
-      "value": string
+    "Urls": {
+      "name": string
+      "type": "sst.aws.Dynamo"
     }
     "Vpc": {
       "type": "sst.aws.Vpc"

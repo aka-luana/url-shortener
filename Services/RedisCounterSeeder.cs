@@ -47,7 +47,13 @@ public class RedisCounterSeeder(
         {
             TableName = options.Value.DynamoTableName,
             IndexName = "HighestIdIndex",
-            KeyConditionExpression = "Shard = :shard",
+            // "Shard" é palavra reservada do DynamoDB (ver lista de reserved
+            // words), por isso precisa do alias "#shard" em vez do nome direto.
+            KeyConditionExpression = "#shard = :shard",
+            ExpressionAttributeNames = new Dictionary<string, string>
+            {
+                ["#shard"] = "Shard",
+            },
             ExpressionAttributeValues = new Dictionary<string, AttributeValue>
             {
                 [":shard"] = new() { S = "all" },
