@@ -37,6 +37,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
+// Roteamento explícito DEPOIS dos estáticos: por padrão ele roda primeiro, e a
+// rota catch-all "/{code}" casaria com /style.css antes do UseStaticFiles.
+app.UseRouting();
 
 app.MapPost("/shorten", async (
     ShortenRequest request,

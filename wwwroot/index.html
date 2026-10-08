@@ -3,43 +3,38 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>curtim — encurta aí</title>
-  <meta name="description" content="curtim: cole o link comprido, receba um curtinho. Sem cadastro, sem enrolação.">
-  <meta name="theme-color" content="#0a6b3d">
+  <title>curtim: encurte seus links</title>
+  <meta name="description" content="Cole o link comprido e receba um curtim. Sem cadastro.">
+  <meta name="theme-color" content="#f6f7f2">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=DM+Mono:wght@500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="calcadao" aria-hidden="true"></div>
-
-  <header class="top">
-    <a class="logo" href="/" aria-label="curtim">curtim<span>.</span></a>
-    <span class="tag">100% grátis · sem cadastro</span>
+  <header class="topo">
+    <a class="logo" href="/" aria-label="curtim, página inicial">curtim</a>
   </header>
 
-  <main>
-    <section class="hero">
-      <div class="bandeira" aria-hidden="true">
-        <div class="losango"><div class="globo"></div></div>
-      </div>
+  <main class="pagina">
+    <div class="conteudo">
+      <h1>
+        <span class="larga">Cole o link comprido.</span>
+        <span class="curta">Leve o curtin.</span>
+      </h1>
 
-      <h1>Link grande?<br><em>Encurta aí.</em></h1>
-      <p class="sub">Cola o endereço, aperta o botão e leva um link curtinho pra mandar no zap.</p>
-
-      <form id="form" class="card" novalidate>
-        <label for="url">Seu link comprido</label>
-        <div class="row">
-          <input id="url" name="url" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://exemplo.com.br/aquele/link/gigante" required>
-          <button id="go" type="submit"><span>Curtinar</span></button>
+      <form id="form" class="form" novalidate>
+        <label for="url">Endereço do link</label>
+        <div class="campo">
+          <input id="url" name="url" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://exemplo.com.br/pagina-gigante" required>
+          <button id="go" type="submit">Encurtar</button>
         </div>
         <p id="erro" class="erro" role="alert" hidden></p>
 
         <div id="resultado" class="resultado" hidden>
-          <span class="rotulo">Prontinho! Seu link:</span>
-          <div class="row">
+          <p class="rotulo">Link encurtado</p>
+          <div class="campo">
             <a id="curto" class="curto" target="_blank" rel="noopener"></a>
             <button id="copiar" type="button" class="copiar">Copiar</button>
           </div>
@@ -47,22 +42,21 @@
       </form>
 
       <section id="recentes" class="recentes" hidden>
-        <div class="recentes-head">
-          <h2>Seus últimos curtins</h2>
-          <button id="limpar" type="button" class="limpar">limpar</button>
+        <div class="recentes-topo">
+          <h2>Seus links recentes</h2>
+          <button id="limpar" type="button" class="limpar">Limpar lista</button>
         </div>
         <ul id="lista"></ul>
       </section>
+    </div>
 
-      <ul class="trio">
-        <li><b>Sem cadastro</b>Cola, curtina, pronto.</li>
-        <li><b>Link fixo</b>Não expira, pode divulgar à vontade.</li>
-        <li><b>Rapidinho</b>Redireciona num piscar de olhos.</li>
-      </ul>
-    </section>
+    <aside class="painel">
+      <div id="azulejos" class="azulejos" aria-hidden="true"></div>
+      <p class="legenda">O desenho dos azulejos muda a cada link encurtado.</p>
+    </aside>
   </main>
 
-  <footer>feito com <span aria-label="amor">♥</span> no Brasil</footer>
+  <footer class="rodape">Feito no Brasil</footer>
 
   <script src="app.js"></script>
 </body>
