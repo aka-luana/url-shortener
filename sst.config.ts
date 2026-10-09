@@ -16,7 +16,10 @@ export default $config({
     const vpc = new sst.aws.Vpc("Vpc");
     const cluster = new sst.aws.Cluster("Cluster", { vpc });
 
-    const api = new sst.aws.ApiGatewayV2("Gateway", { vpc });
+    const api = new sst.aws.ApiGatewayV2("Gateway", {
+      vpc,
+      domain: "linkzin.click",
+    });
 
     // Substitui o MongoDB Atlas: o proxy multi-tenant do nível grátis (M0)
     // rejeita o handshake TLS de clientes OpenSSL (bug confirmado do lado da
