@@ -11,7 +11,7 @@ const recentes = $("recentes");
 const lista = $("lista");
 const painel = $("azulejos");
 
-const CHAVE = "curtim:recentes";
+const CHAVE = "linkzin:recentes";
 const MAX_RECENTES = 5;
 
 /* ---------- Azulejos (inspirados nos painéis de Athos Bulcão) ---------- */
