@@ -44,34 +44,35 @@ function sorteio(texto) {
   };
 }
 
-// Mesmo desenho de base para todos os links; só a rotação muda.
-const BASE = (() => {
-  const r = sorteio("curtim");
-  return Array.from({ length: 25 }, () => {
-    const fundo = PALETA[(r() * PALETA.length) | 0];
-    let frente = PALETA[(r() * PALETA.length) | 0];
-    if (frente === fundo) frente = PALETA[(PALETA.indexOf(fundo) + 1) % PALETA.length];
-    return { forma: FORMAS[(r() * FORMAS.length) | 0], fundo, frente };
-  });
-})();
+function sortearAzulejo(r) {
+  const fundo = PALETA[(r() * PALETA.length) | 0];
+  let frente = PALETA[(r() * PALETA.length) | 0];
+  if (frente === fundo) frente = PALETA[(PALETA.indexOf(fundo) + 1) % PALETA.length];
+  return { forma: FORMAS[(r() * FORMAS.length) | 0], fundo, frente };
+}
 
 function criarAzulejos(el, quantidade) {
   el.replaceChildren();
-  const tiles = BASE.slice(0, quantidade).map((t, i) => {
+  const tiles = Array.from({ length: quantidade }, (_, i) => {
     const d = document.createElement("span");
     d.className = "tile";
     d.style.setProperty("--i", i);
     d.dataset.angulo = "0";
-    d.innerHTML =
-      `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect width="100" height="100" fill="${t.fundo}"/><path d="${t.forma}" fill="${t.frente}"/></svg>`;
+    d.innerHTML = `<svg viewBox="0 0 100 100" preserveAspectRatio="none"></svg>`;
     el.appendChild(d);
     return d;
   });
 
   return {
+    // Forma, cor E rotação saem todas da semente do código — assim cada
+    // link encurtado tem mesmo um padrão diferente, não só giradinho.
     girar(codigo) {
       const r = sorteio(codigo);
       tiles.forEach((d) => {
+        const t = sortearAzulejo(r);
+        d.querySelector("svg").innerHTML =
+          `<rect width="100" height="100" fill="${t.fundo}"/><path d="${t.forma}" fill="${t.frente}"/>`;
+
         const alvo = ((r() * 4) | 0) * 90;
         const atual = Number(d.dataset.angulo);
         let delta = (((alvo - atual) % 360) + 360) % 360;
