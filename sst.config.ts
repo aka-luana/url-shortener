@@ -12,6 +12,8 @@ export default $config({
   },
   async run() {
     const hashidsSalt = new sst.Secret("HashidsSalt");
+    const otelExporterEndpoint = new sst.Secret("OtelExporterEndpoint");
+    const otelExporterHeaders = new sst.Secret("OtelExporterHeaders");
 
     const vpc = new sst.aws.Vpc("Vpc");
     const cluster = new sst.aws.Cluster("Cluster", { vpc });
@@ -76,6 +78,13 @@ export default $config({
             UrlShortener__HashidsSalt: hashidsSalt.value,
             UrlShortener__BaseUrl: $interpolate`${api.url}`,
             UrlShortener__DynamoTableName: table.name,
+            // Observabilidade: o SDK do OpenTelemetry lê essas variáveis
+            // padrão sozinho (nenhum endpoint/token fica no código).
+            OTEL_SERVICE_NAME: "url-shortener",
+            OTEL_RESOURCE_ATTRIBUTES: `deployment.environment=${$app.stage}`,
+            OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf",
+            OTEL_EXPORTER_OTLP_ENDPOINT: otelExporterEndpoint.value,
+            OTEL_EXPORTER_OTLP_HEADERS: otelExporterHeaders.value,
           },
         },
         {
